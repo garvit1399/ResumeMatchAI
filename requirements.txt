@@ -1,0 +1,20 @@
+# Core dependencies
+# NOTE: Requires Python 3.8-3.13 (Python 3.11 or 3.12 recommended)
+# Python 3.14+ may have compatibility issues with spaCy
+
+streamlit>=1.28.0
+numpy>=1.24.0
+scikit-learn>=1.3.0
+pandas>=2.0.0
+
+# NLP and Text Processing
+spacy>=3.7.0
+sentence-transformers>=2.2.0
+
+# PDF Processing (choose one or both)
+pdfplumber>=0.10.0
+# PyMuPDF>=1.23.0  # Alternative to pdfplumber, uncomment if preferred
+
+# Additional utilities
+python-dotenv>=1.0.0
+
