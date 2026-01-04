@@ -16,45 +16,179 @@ from src.maris_controller import MARISController
 
 # Page configuration
 st.set_page_config(
-    page_title="AI Resume-Job Matcher",
-    page_icon="🔍",
+    page_title="ResumeMatch AI",
+    page_icon="🎯",
     layout="wide",
-    initial_sidebar_state="expanded"
+    initial_sidebar_state="expanded",
+    menu_items={
+        'Get Help': None,
+        'Report a bug': None,
+        'About': "ResumeMatch AI - Intelligent resume-job matching powered by advanced NLP and multi-agent AI systems"
+    }
 )
 
-# Custom CSS for better styling
+# Enhanced CSS for modern, human-designed UI
 st.markdown("""
     <style>
+    /* Hide default Streamlit elements */
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    header {visibility: hidden;}
+    
+    /* Main container */
+    .main .block-container {
+        padding-top: 2rem;
+        padding-bottom: 2rem;
+    }
+    
+    /* Header styling */
     .main-header {
-        font-size: 2.5rem;
-        font-weight: bold;
-        color: #1f77b4;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        font-size: 3rem;
+        font-weight: 700;
         text-align: center;
-        margin-bottom: 2rem;
+        margin-bottom: 0.5rem;
+        letter-spacing: -0.02em;
     }
+    
+    .sub-header {
+        text-align: center;
+        color: #6b7280;
+        font-size: 1.1rem;
+        margin-bottom: 2.5rem;
+        font-weight: 400;
+    }
+    
+    /* Card styling */
     .metric-card {
-        background-color: #f0f2f6;
-        padding: 1rem;
-        border-radius: 0.5rem;
+        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+        padding: 1.5rem;
+        border-radius: 12px;
         margin: 0.5rem 0;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        border: 1px solid rgba(255,255,255,0.5);
     }
+    
+    /* Skill badges */
     .skill-badge {
         display: inline-block;
-        background-color: #4CAF50;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
-        padding: 0.25rem 0.75rem;
-        border-radius: 1rem;
-        margin: 0.25rem;
-        font-size: 0.85rem;
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+        margin: 0.3rem;
+        font-size: 0.9rem;
+        font-weight: 500;
+        box-shadow: 0 2px 4px rgba(102, 126, 234, 0.3);
+        transition: transform 0.2s;
     }
+    
+    .skill-badge:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(102, 126, 234, 0.4);
+    }
+    
     .missing-skill-badge {
         display: inline-block;
-        background-color: #f44336;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
         color: white;
-        padding: 0.25rem 0.75rem;
-        border-radius: 1rem;
-        margin: 0.25rem;
-        font-size: 0.85rem;
+        padding: 0.4rem 1rem;
+        border-radius: 20px;
+        margin: 0.3rem;
+        font-size: 0.9rem;
+        font-weight: 500;
+        box-shadow: 0 2px 4px rgba(245, 87, 108, 0.3);
+    }
+    
+    /* Section headers */
+    h2 {
+        color: #1f2937;
+        font-weight: 600;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        border-left: 4px solid #667eea;
+        padding-left: 1rem;
+    }
+    
+    h3 {
+        color: #374151;
+        font-weight: 600;
+        margin-top: 1.5rem;
+    }
+    
+    /* Input areas */
+    .stTextArea textarea {
+        border-radius: 8px;
+        border: 2px solid #e5e7eb;
+    }
+    
+    .stTextArea textarea:focus {
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+    
+    /* Buttons */
+    .stButton > button {
+        border-radius: 8px;
+        font-weight: 600;
+        transition: all 0.3s;
+        border: none;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    
+    /* Sidebar */
+    .css-1d391kg {
+        background-color: #f9fafb;
+    }
+    
+    /* Info boxes */
+    .stInfo {
+        border-radius: 8px;
+        border-left: 4px solid #3b82f6;
+    }
+    
+    .stSuccess {
+        border-radius: 8px;
+        border-left: 4px solid #10b981;
+    }
+    
+    .stWarning {
+        border-radius: 8px;
+        border-left: 4px solid #f59e0b;
+    }
+    
+    .stError {
+        border-radius: 8px;
+        border-left: 4px solid #ef4444;
+    }
+    
+    /* Tabs */
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+    }
+    
+    .stTabs [data-baseweb="tab"] {
+        border-radius: 8px 8px 0 0;
+        padding: 0.75rem 1.5rem;
+        font-weight: 500;
+    }
+    
+    /* Metrics */
+    [data-testid="stMetricValue"] {
+        font-size: 2rem;
+        font-weight: 700;
+    }
+    
+    /* File uploader */
+    .uploadedFile {
+        border-radius: 8px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -88,45 +222,47 @@ def load_maris():
 def main():
     """Main application function."""
     
-    # Header
-    st.markdown('<h1 class="main-header">🔍 AI-Powered Resume & Job Matching System</h1>', unsafe_allow_html=True)
-    st.markdown("---")
+    # Modern header with gradient
+    st.markdown('<h1 class="main-header">ResumeMatch AI</h1>', unsafe_allow_html=True)
+    st.markdown('<p class="sub-header">Match your resume with job opportunities using intelligent AI analysis</p>', unsafe_allow_html=True)
     
-    # Sidebar
+    # Sidebar with improved design
     with st.sidebar:
-        st.header("📋 Instructions")
+        st.markdown("### 🎯 Quick Start")
         st.markdown("""
-        1. **Upload your resume** (PDF or TXT)
-        2. **Paste or upload job description** (TXT or paste text)
-        3. Click **"Match Resume"** to analyze
-        4. Review your **match score** and **skill gaps**
+        **Step 1:** Upload or paste your resume  
+        **Step 2:** Add the job description  
+        **Step 3:** Get instant match analysis
         """)
         
         st.markdown("---")
-        st.header("⚙️ Advanced Options")
         
-        # MARIS Mode Toggle
-        st.subheader("🤖 AI System Mode")
-        use_maris = st.checkbox(
-            "Use MARIS (Multi-Agent System)",
+        st.markdown("### ⚙️ Settings")
+        
+        # MARIS Mode Toggle with better design
+        st.markdown("**AI Analysis Mode**")
+        use_maris = st.toggle(
+            "🤖 Multi-Agent System (MARIS)",
             value=st.session_state.use_maris,
-            help="MARIS uses multiple specialized AI agents that collaborate and verify each other's outputs"
+            help="Advanced mode with multiple AI agents that verify each other's analysis for higher accuracy"
         )
         st.session_state.use_maris = use_maris
         
         if use_maris:
-            st.info("🧠 **MARIS Mode**: Multi-agent collaborative AI system with verification")
+            st.success("✓ **MARIS Active** - Enhanced accuracy with agent verification")
         else:
-            st.info("🔍 **Standard Mode**: Single-model matching system")
+            st.info("**Standard Mode** - Fast single-model analysis")
         
         st.markdown("---")
         
-        # Custom weights
-        st.subheader("Scoring Weights")
-        skill_weight = st.slider("Skills", 0.0, 1.0, 0.4, 0.05)
-        exp_weight = st.slider("Experience", 0.0, 1.0, 0.3, 0.05)
-        edu_weight = st.slider("Education", 0.0, 1.0, 0.15, 0.05)
-        tool_weight = st.slider("Tools", 0.0, 1.0, 0.15, 0.05)
+        # Custom weights with better UI
+        st.markdown("**Match Scoring Preferences**")
+        st.caption("Adjust how much each factor influences your match score")
+        
+        skill_weight = st.slider("💼 Skills", 0.0, 1.0, 0.4, 0.05, help="Technical skills and competencies")
+        exp_weight = st.slider("📈 Experience", 0.0, 1.0, 0.3, 0.05, help="Years and depth of experience")
+        edu_weight = st.slider("🎓 Education", 0.0, 1.0, 0.15, 0.05, help="Educational qualifications")
+        tool_weight = st.slider("🛠️ Tools", 0.0, 1.0, 0.15, 0.05, help="Tools and technologies")
         
         # Normalize weights
         total = skill_weight + exp_weight + edu_weight + tool_weight
@@ -143,17 +279,28 @@ def main():
             'tools': tool_weight
         }
         
-        st.info(f"Total: {sum(custom_weights.values()):.2f}")
+        # Visual weight indicator
+        if abs(sum(custom_weights.values()) - 1.0) < 0.01:
+            st.success(f"✓ Weights balanced ({sum(custom_weights.values()):.0%})")
+        else:
+            st.warning(f"Weights: {sum(custom_weights.values()):.0%}")
+        
+        st.markdown("---")
+        st.markdown("### 💡 Tips")
+        st.caption("• Upload PDF resumes for best results\n• Include full job descriptions for accurate matching\n• Review skill gaps to improve your resume")
     
-    # Main content area
-    col1, col2 = st.columns(2)
+    # Main content area with better layout
+    st.markdown("### 📝 Input Your Information")
+    
+    col1, col2 = st.columns(2, gap="large")
     
     with col1:
-        st.header("📄 Resume")
+        st.markdown("#### 📄 Your Resume")
         resume_option = st.radio(
-            "Choose input method:",
-            ["Upload File", "Paste Text"],
-            key="resume_option"
+            "How would you like to add your resume?",
+            ["📤 Upload File", "✍️ Paste Text"],
+            key="resume_option",
+            horizontal=True
         )
         
         resume_text = ""
@@ -171,8 +318,9 @@ def main():
                 
                 try:
                     resume_text = extract_text(tmp_path)
-                    st.success(f"✅ Resume loaded: {len(resume_text)} characters")
-                    st.text_area("Preview (first 500 chars):", resume_text[:500], height=100, disabled=True)
+                    st.success(f"✓ Resume loaded successfully ({len(resume_text):,} characters)")
+                    with st.expander("👁️ Preview resume"):
+                        st.text(resume_text[:500] + "..." if len(resume_text) > 500 else resume_text)
                 except Exception as e:
                     st.error(f"Error reading file: {str(e)}")
                 finally:
@@ -181,19 +329,21 @@ def main():
                         os.unlink(tmp_path)
         else:
             resume_text = st.text_area(
-                "Paste Resume Text:",
+                "Paste your resume content here:",
                 height=300,
-                key="resume_paste"
+                key="resume_paste",
+                placeholder="Copy and paste your resume text here, or upload a file above..."
             )
             if resume_text:
-                st.info(f"📝 {len(resume_text)} characters")
+                st.caption(f"📝 {len(resume_text):,} characters entered")
     
     with col2:
-        st.header("💼 Job Description")
+        st.markdown("#### 💼 Job Description")
         job_option = st.radio(
-            "Choose input method:",
-            ["Upload File", "Paste Text"],
-            key="job_option"
+            "How would you like to add the job description?",
+            ["📤 Upload File", "✍️ Paste Text"],
+            key="job_option",
+            horizontal=True
         )
         
         job_text = ""
@@ -211,8 +361,9 @@ def main():
                 
                 try:
                     job_text = extract_text(tmp_path)
-                    st.success(f"✅ Job description loaded: {len(job_text)} characters")
-                    st.text_area("Preview (first 500 chars):", job_text[:500], height=100, disabled=True)
+                    st.success(f"✓ Job description loaded successfully ({len(job_text):,} characters)")
+                    with st.expander("👁️ Preview job description"):
+                        st.text(job_text[:500] + "..." if len(job_text) > 500 else job_text)
                 except Exception as e:
                     st.error(f"Error reading file: {str(e)}")
                 finally:
@@ -221,19 +372,29 @@ def main():
                         os.unlink(tmp_path)
         else:
             job_text = st.text_area(
-                "Paste Job Description:",
+                "Paste the job description here:",
                 height=300,
-                key="job_paste"
+                key="job_paste",
+                placeholder="Copy and paste the job description here, or upload a file above..."
             )
             if job_text:
-                st.info(f"📝 {len(job_text)} characters")
+                st.caption(f"📝 {len(job_text):,} characters entered")
     
     st.markdown("---")
     
-    # Match button
-    if st.button("🚀 Match Resume", type="primary", use_container_width=True):
+    # Enhanced match button
+    col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
+    with col_btn2:
+        match_button = st.button(
+            "🎯 Analyze Match",
+            type="primary",
+            use_container_width=True,
+            help="Click to analyze how well your resume matches the job description"
+        )
+    
+    if match_button:
         if not resume_text or not job_text:
-            st.warning("⚠️ Please provide both resume and job description.")
+            st.warning("👋 Please provide both your resume and the job description to get started.")
         else:
             if st.session_state.use_maris:
                 # Use MARIS system
@@ -277,15 +438,15 @@ def main():
         # Standard Results
         results = st.session_state.results
         
-        # Create tabs for different views
+        # Create tabs with better labels
         tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
-            "📊 Main Results",
-            "🔍 Explainable AI",
-            "💪 Skill Confidence",
-            "📝 ATS Optimization",
-            "✍️ Resume Rewrites",
-            "📈 Multi-Job Compare",
-            "🤖 Multi-Agent System"
+            "📊 Overview",
+            "🔍 Why This Score?",
+            "💪 Your Skills",
+            "📝 ATS Check",
+            "✍️ Improve Resume",
+            "📈 Compare Jobs",
+            "🤖 AI Analysis"
         ])
         
         with tab1:
@@ -312,88 +473,138 @@ def main():
 
 def _display_main_results(results):
     """Display main matching results."""
-    st.markdown("---")
-    st.header("📊 Matching Results")
+    # Hero section with main score
+    score = results['match_score']
     
-    # Main metrics
-    col1, col2, col3 = st.columns(3)
+    # Color coding based on score
+    if score >= 80:
+        score_color = "#10b981"  # Green
+        score_label = "Excellent Match"
+    elif score >= 60:
+        score_color = "#3b82f6"  # Blue
+        score_label = "Good Match"
+    elif score >= 40:
+        score_color = "#f59e0b"  # Orange
+        score_label = "Moderate Match"
+    else:
+        score_color = "#ef4444"  # Red
+        score_label = "Needs Improvement"
+    
+    st.markdown(f"""
+    <div style="text-align: center; padding: 2rem; background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%); border-radius: 16px; margin-bottom: 2rem;">
+        <h2 style="color: {score_color}; font-size: 4rem; margin: 0; font-weight: 700;">{score:.1f}%</h2>
+        <p style="color: #6b7280; font-size: 1.2rem; margin-top: 0.5rem; font-weight: 500;">{score_label}</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Key metrics in a row
+    col1, col2, col3, col4 = st.columns(4)
     
     with col1:
         st.metric(
-            "🎯 Match Score",
-            f"{results['match_score']:.1f}%",
-            delta=f"{results['match_score'] - 50:.1f}%",
-            delta_color="normal"
+            "Overall Similarity",
+            f"{results['overall_similarity']:.1f}%",
+            help="How similar your resume is to the job description overall"
         )
     
     with col2:
+        gap_analysis = results['gap_analysis']
         st.metric(
-            "🔗 Overall Similarity",
-            f"{results['overall_similarity']:.1f}%"
+            "Skill Coverage",
+            f"{gap_analysis['skill_coverage']:.1f}%",
+            help="Percentage of required skills you have"
         )
     
     with col3:
-        gap_analysis = results['gap_analysis']
+        section_scores = results['section_scores']
         st.metric(
-            "✅ Skill Coverage",
-            f"{gap_analysis['skill_coverage']:.1f}%"
+            "Skills Match",
+            f"{section_scores['skills']:.1f}%",
+            help="How well your skills match the job requirements"
         )
     
-    # Section breakdown
-    st.subheader("📈 Section Breakdown")
-    section_cols = st.columns(4)
+    with col4:
+        st.metric(
+            "Experience Match",
+            f"{section_scores['experience']:.1f}%",
+            help="How well your experience aligns with the job"
+        )
     
-    sections = ['skills', 'experience', 'education', 'tools']
-    section_names = ['Skills', 'Experience', 'Education', 'Tools']
-    
-    for i, (section, name) in enumerate(zip(sections, section_names)):
-        with section_cols[i]:
-            score = results['section_scores'][section]
-            st.metric(name, f"{score:.1f}%")
-    
-    # Skill gap analysis
     st.markdown("---")
-    st.header("🔍 Skill Gap Analysis")
     
+    # Section breakdown with visual bars
+    st.markdown("### 📊 Detailed Breakdown")
+    section_scores = results['section_scores']
+    
+    sections_data = [
+        ('skills', '💼 Skills', section_scores['skills']),
+        ('experience', '📈 Experience', section_scores['experience']),
+        ('education', '🎓 Education', section_scores['education']),
+        ('tools', '🛠️ Tools', section_scores['tools'])
+    ]
+    
+    for section_key, section_name, score in sections_data:
+        col_label, col_bar, col_score = st.columns([2, 5, 1])
+        with col_label:
+            st.write(f"**{section_name}**")
+        with col_bar:
+            # Visual progress bar
+            bar_color = "#10b981" if score >= 70 else "#3b82f6" if score >= 50 else "#f59e0b" if score >= 30 else "#ef4444"
+            st.markdown(f"""
+            <div style="background: #e5e7eb; border-radius: 10px; height: 24px; overflow: hidden;">
+                <div style="background: {bar_color}; width: {score}%; height: 100%; border-radius: 10px; transition: width 0.3s;"></div>
+            </div>
+            """, unsafe_allow_html=True)
+        with col_score:
+            st.write(f"**{score:.0f}%**")
+    
+    st.markdown("---")
+    
+    # Skill gap analysis with better visual design
+    st.markdown("### 🎯 Skills Analysis")
     gap_analysis = results['gap_analysis']
     
-    col1, col2 = st.columns(2)
+    col1, col2 = st.columns(2, gap="large")
     
     with col1:
-        st.subheader("✅ Matching Skills")
+        st.markdown("#### ✅ Skills You Have")
         matching_skills = gap_analysis['matching_skills']
         if matching_skills:
-            for skill in matching_skills:
-                st.markdown(f'<span class="skill-badge">{skill}</span>', unsafe_allow_html=True)
+            st.caption(f"Great! You have {len(matching_skills)} matching skills")
+            skill_text = " ".join([f'<span class="skill-badge">{skill}</span>' for skill in matching_skills])
+            st.markdown(skill_text, unsafe_allow_html=True)
         else:
-            st.info("No matching skills found.")
+            st.info("No matching skills detected. Try adding more technical skills to your resume.")
         
-        st.subheader("🛠️ Matching Tools")
+        st.markdown("---")
+        st.markdown("#### 🛠️ Tools You Know")
         matching_tools = gap_analysis['matching_tools']
         if matching_tools:
-            for tool in matching_tools:
-                st.markdown(f'<span class="skill-badge">{tool}</span>', unsafe_allow_html=True)
+            st.caption(f"You're familiar with {len(matching_tools)} required tools")
+            tool_text = " ".join([f'<span class="skill-badge">{tool}</span>' for tool in matching_tools])
+            st.markdown(tool_text, unsafe_allow_html=True)
         else:
             st.info("No matching tools found.")
     
     with col2:
-        st.subheader("❌ Missing Skills")
+        st.markdown("#### ⚠️ Skills to Learn")
         missing_skills = gap_analysis['missing_skills']
         if missing_skills:
-            st.warning(f"⚠️ {len(missing_skills)} missing skills identified:")
-            for skill in missing_skills:
-                st.markdown(f'<span class="missing-skill-badge">{skill}</span>', unsafe_allow_html=True)
+            st.caption(f"Focus on learning {len(missing_skills)} missing skills to improve your match")
+            skill_text = " ".join([f'<span class="missing-skill-badge">{skill}</span>' for skill in missing_skills])
+            st.markdown(skill_text, unsafe_allow_html=True)
         else:
-            st.success("✅ All required skills are present!")
+            st.success("🎉 Excellent! You have all the required skills.")
         
-        st.subheader("🔧 Missing Tools")
+        st.markdown("---")
+        st.markdown("#### 🔧 Tools to Consider")
         missing_tools = gap_analysis['missing_tools']
         if missing_tools:
-            st.warning(f"⚠️ {len(missing_tools)} missing tools identified:")
-            for tool in missing_tools:
-                st.markdown(f'<span class="missing-skill-badge">{tool}</span>', unsafe_allow_html=True)
+            st.caption(f"Consider learning {len(missing_tools)} additional tools")
+            tool_text = " ".join([f'<span class="missing-skill-badge">{tool}</span>' for tool in missing_tools])
+            st.markdown(tool_text, unsafe_allow_html=True)
         else:
-            st.success("✅ All required tools are present!")
+            st.success("✓ You know all the required tools!")
     
     # Detailed breakdown
     with st.expander("📋 Detailed Breakdown"):
@@ -407,19 +618,30 @@ def _display_main_results(results):
         st.write(f"Resume: {', '.join(gap_analysis['resume_education']) if gap_analysis['resume_education'] else 'None'}")
         st.write(f"Job: {', '.join(gap_analysis['job_education']) if gap_analysis['job_education'] else 'None'}")
     
-    # Recommendations
     st.markdown("---")
-    st.header("💡 Recommendations")
+    
+    # Actionable recommendations
+    st.markdown("### 💡 How to Improve Your Match")
     
     if missing_skills:
         st.info(f"""
-        **To improve your match score:**
-        - Consider highlighting experience with: {', '.join(missing_skills[:5])}
-        - Add these skills to your resume if you have experience with them
-        - Focus on the top missing skills in your cover letter
+        **🎯 Action Items:**
+        
+        1. **Learn or highlight**: {', '.join(missing_skills[:3])}
+        2. **Add to resume**: If you have experience with any missing skills, make sure they're clearly mentioned
+        3. **Cover letter**: Emphasize your willingness to learn and any related experience
+        
+        **💪 Quick Win**: Focus on the top 2-3 missing skills first - they'll have the biggest impact on your score.
         """)
     else:
-        st.success("🎉 Great! Your resume covers all required skills. Focus on highlighting your experience and achievements.")
+        st.success("""
+        **🎉 Great News!**
+        
+        Your resume already covers all the required skills. To further improve:
+        - Highlight specific achievements and projects
+        - Quantify your experience with metrics
+        - Emphasize leadership and collaboration examples
+        """)
     
     # Export results (optional)
     if st.button("📥 Download Results Summary"):
@@ -456,10 +678,11 @@ MISSING TOOLS ({len(missing_tools)}):
 
 def _display_explainable_ai(results):
     """Display explainable AI analysis."""
-    st.header("🔍 Explainable AI - Why This Score?")
+    st.markdown("### 🔍 Understanding Your Score")
+    st.caption("See exactly why you got this score and what influenced it")
     
     if 'explanations' not in results:
-        st.info("Run the analysis first to see explainable insights.")
+        st.info("💡 Run the analysis first to see detailed insights about your match score.")
         return
     
     explanations = results['explanations']
@@ -468,41 +691,64 @@ def _display_explainable_ai(results):
     
     # Top reasons for low score
     if top_reasons:
-        st.subheader("📉 Top 5 Reasons Your Score is Low")
+        st.markdown("#### ⚠️ What's Holding You Back")
+        st.caption("These factors are reducing your match score:")
         for i, reason in enumerate(top_reasons, 1):
-            st.write(f"{i}. {reason}")
+            st.markdown(f"**{i}.** {reason}")
+    else:
+        st.success("✅ No major issues detected! Your score looks good.")
     
-    # Section impact breakdown
-    st.subheader("📊 Section Impact on Final Score")
+    st.markdown("---")
+    
+    # Section impact breakdown with visual design
+    st.markdown("#### 📊 How Each Section Affects Your Score")
     section_impact = explanations.get('section_impact', {})
     
+    section_names = {
+        'skills': '💼 Skills',
+        'experience': '📈 Experience',
+        'education': '🎓 Education',
+        'tools': '🛠️ Tools'
+    }
+    
     for section, data in section_impact.items():
-        col1, col2, col3 = st.columns(3)
-        with col1:
-            st.metric(f"{section.capitalize()} Score", f"{data['score']:.1f}%")
-        with col2:
-            st.metric("Weight", f"{data['weight']:.1f}%")
-        with col3:
-            status_emoji = "✅" if data['status'] == 'strong' else "⚠️" if data['status'] == 'moderate' else "❌"
-            st.metric("Contribution", f"{data['contribution']:.1f}%", help=f"Status: {data['status']}")
+        section_name = section_names.get(section, section.capitalize())
+        
+        with st.container():
+            col1, col2, col3 = st.columns([2, 1, 1])
+            with col1:
+                st.write(f"**{section_name}**")
+                # Visual indicator
+                status_color = "#10b981" if data['status'] == 'strong' else "#f59e0b" if data['status'] == 'moderate' else "#ef4444"
+                status_text = "Strong" if data['status'] == 'strong' else "Moderate" if data['status'] == 'moderate' else "Weak"
+                st.caption(f"Status: <span style='color: {status_color}; font-weight: 600;'>{status_text}</span>", unsafe_allow_html=True)
+            with col2:
+                st.metric("Score", f"{data['score']:.0f}%")
+            with col3:
+                st.metric("Impact", f"{data['contribution']:.1f}%")
+            
+            st.markdown("---")
     
-    # Top strengths
-    st.subheader("✅ Top Strengths")
-    strengths = explanations.get('top_strengths', [])
-    if strengths:
-        for strength in strengths:
-            st.success(f"✓ {strength['message']}")
-    else:
-        st.info("No strong sections identified.")
+    # Top strengths and weaknesses in columns
+    col_strength, col_weakness = st.columns(2, gap="large")
     
-    # Top weaknesses
-    st.subheader("❌ Top Weaknesses")
-    weaknesses = explanations.get('top_weaknesses', [])
-    if weaknesses:
-        for weakness in weaknesses:
-            st.warning(f"⚠️ {weakness['message']}")
-    else:
-        st.success("No major weaknesses identified!")
+    with col_strength:
+        st.markdown("#### ✅ Your Strengths")
+        strengths = explanations.get('top_strengths', [])
+        if strengths:
+            for strength in strengths:
+                st.success(f"✓ {strength['message']}")
+        else:
+            st.info("Analyzing your strengths...")
+    
+    with col_weakness:
+        st.markdown("#### ⚠️ Areas to Improve")
+        weaknesses = explanations.get('top_weaknesses', [])
+        if weaknesses:
+            for weakness in weaknesses:
+                st.warning(f"⚠️ {weakness['message']}")
+        else:
+            st.success("🎉 No major weaknesses! You're doing great.")
     
     # Resume highlights
     if resume_highlights:
@@ -523,10 +769,11 @@ def _display_explainable_ai(results):
 
 def _display_skill_confidence(results):
     """Display skill confidence analysis."""
-    st.header("💪 Skill Confidence Analysis")
+    st.markdown("### 💪 Your Skills Breakdown")
+    st.caption("See how strong your skills are based on how you've presented them")
     
     if 'skill_confidence' not in results:
-        st.info("Run the analysis first to see skill confidence levels.")
+        st.info("💡 Run the analysis first to see detailed skill confidence levels.")
         return
     
     skill_confidence = results['skill_confidence']
@@ -570,10 +817,11 @@ def _display_skill_confidence(results):
 
 def _display_ats_optimization(results):
     """Display ATS optimization analysis."""
-    st.header("📝 ATS Optimization Analysis")
+    st.markdown("### 📝 ATS Compatibility Check")
+    st.caption("See how well your resume will work with Applicant Tracking Systems")
     
     if 'ats_analysis' not in results:
-        st.info("Run the analysis first to see ATS optimization insights.")
+        st.info("💡 Run the analysis first to check your resume's ATS compatibility.")
         return
     
     ats_analysis = results['ats_analysis']
@@ -619,10 +867,11 @@ def _display_ats_optimization(results):
 
 def _display_resume_rewrites(results):
     """Display resume rewrite suggestions."""
-    st.header("✍️ Resume Rewrite Suggestions")
+    st.markdown("### ✍️ Improve Your Resume")
+    st.caption("Get AI-powered suggestions to make your resume bullet points more impactful")
     
     if 'rewrite_suggestions' not in results:
-        st.info("Run the analysis first to see rewrite suggestions.")
+        st.info("💡 Run the analysis first to get personalized resume improvement suggestions.")
         return
     
     rewrite_suggestions = results.get('rewrite_suggestions', [])
@@ -644,16 +893,28 @@ def _display_resume_rewrites(results):
 
 def _display_multi_job_comparison(resume_text, matcher):
     """Display multi-job comparison interface."""
-    st.header("📈 Multi-Job Comparison")
-    st.info("Compare your resume against multiple job descriptions at once!")
+    st.markdown("### 📈 Compare Multiple Jobs")
+    st.caption("See how your resume stacks up against multiple opportunities at once")
+    
+    if not resume_text:
+        st.warning("👋 Please upload or paste your resume first to compare it with multiple jobs.")
+        return
     
     if not resume_text:
         st.warning("Please upload or paste your resume first.")
         return
     
-    # Job descriptions input
-    st.subheader("Add Job Descriptions")
-    num_jobs = st.number_input("Number of jobs to compare", min_value=1, max_value=10, value=2)
+    st.markdown("---")
+    
+    # Job descriptions input with better UX
+    st.markdown("#### Add Jobs to Compare")
+    num_jobs = st.number_input(
+        "How many jobs would you like to compare?",
+        min_value=1,
+        max_value=10,
+        value=2,
+        help="Compare your resume against multiple job postings simultaneously"
+    )
     
     job_descriptions = {}
     for i in range(num_jobs):
@@ -662,20 +923,27 @@ def _display_multi_job_comparison(resume_text, matcher):
         if job_title and job_text:
             job_descriptions[job_title] = job_text
     
-    if st.button("🔄 Compare All Jobs", type="primary"):
+    col_btn1, col_btn2, col_btn3 = st.columns([1, 2, 1])
+    with col_btn2:
+        compare_button = st.button("🔄 Compare All Jobs", type="primary", use_container_width=True)
+    
+    if compare_button:
         if not job_descriptions:
-            st.warning("Please add at least one job description.")
+            st.warning("👋 Please add at least one job description to compare.")
         else:
-            with st.spinner("Comparing against all jobs..."):
+            with st.spinner(f"🤖 Analyzing your resume against {len(job_descriptions)} job{'s' if len(job_descriptions) > 1 else ''}..."):
                 comparator = MultiJobComparator(matcher)
                 comparison_results = comparator.compare_multiple_jobs(resume_text, job_descriptions)
                 st.session_state.comparison_results = comparison_results
+                st.success(f"✓ Analysis complete! Compared against {len(job_descriptions)} job{'s' if len(job_descriptions) > 1 else ''}.")
     
     # Display comparison results
     if 'comparison_results' in st.session_state:
         results = st.session_state.comparison_results
         
-        st.subheader("📊 Job Rankings")
+        st.markdown("---")
+        st.markdown("#### 📊 Your Job Rankings")
+        st.caption("Jobs ranked by how well your resume matches")
         
         # Ranking table
         ranking_data = []
@@ -690,17 +958,26 @@ def _display_multi_job_comparison(resume_text, matcher):
         df = pd.DataFrame(ranking_data)
         st.dataframe(df, use_container_width=True)
         
-        # Best fit jobs
-        st.subheader("🏆 Best Fit Jobs")
+        st.markdown("---")
+        
+        # Best fit jobs with better design
+        st.markdown("#### 🏆 Top Matches")
         top_jobs = results[:3]
         for i, job in enumerate(top_jobs, 1):
-            with st.expander(f"#{i} {job['job_id']} - {job['match_score']:.1f}% match"):
-                st.metric("Match Score", f"{job['match_score']:.1f}%")
-                st.metric("Skill Coverage", f"{job['gap_analysis']['skill_coverage']:.1f}%")
+            score = job['match_score']
+            medal = "🥇" if i == 1 else "🥈" if i == 2 else "🥉"
+            
+            with st.expander(f"{medal} **#{i} {job['job_id']}** - {score:.1f}% match", expanded=(i==1)):
+                col1, col2 = st.columns(2)
+                with col1:
+                    st.metric("Match Score", f"{score:.1f}%")
+                with col2:
+                    st.metric("Skill Coverage", f"{job['gap_analysis']['skill_coverage']:.1f}%")
                 
                 missing = job['gap_analysis']['missing_skills'][:5]
                 if missing:
-                    st.write("**Top Missing Skills:**", ", ".join(missing))
+                    st.caption("**Skills to focus on:**")
+                    st.write(", ".join(missing))
         
         # Summary statistics
         if len(results) > 1:
@@ -888,8 +1165,8 @@ def _display_maris_results(maris_results):
 
 def _display_multi_agent_system(results):
     """Display multi-agent system (MARIS) outputs and explainability."""
-    st.header("🤖 Multi-Agent Resume Intelligence System (MARIS)")
-    st.info("🧠 **Advanced AI Architecture**: Multiple specialized agents collaborate, verify, and explain their analysis")
+    st.markdown("### 🤖 AI Analysis Details")
+    st.caption("See how our AI agents analyzed your resume and job match")
     
     # Check if multi-agent data exists
     if 'multi_agent' not in results or not results['multi_agent'].get('enabled', False):
