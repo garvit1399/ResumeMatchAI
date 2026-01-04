@@ -42,12 +42,17 @@ class BaseAgent(ABC):
         self.confidence_threshold = 0.7
     
     @abstractmethod
-    def process(self, input_data: Dict[str, Any]) -> AgentMessage:
+    def process(
+        self,
+        input_data: Dict[str, Any],
+        context: Optional[Dict[str, Any]] = None
+    ) -> AgentMessage:
         """
         Process input and return structured message.
         
         Args:
             input_data: Input data dictionary
+            context: Optional context from other agents
             
         Returns:
             AgentMessage with results

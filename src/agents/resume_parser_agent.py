@@ -4,7 +4,7 @@ Extracts structured information from resumes using NLP and rule-based extraction
 """
 
 import re
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from .base_agent import BaseAgent, AgentMessage
 from ..skill_gap import SkillExtractor
 from ..preprocess import TextPreprocessor
@@ -19,7 +19,11 @@ class ResumeParserAgent(BaseAgent):
         self.skill_extractor = SkillExtractor()
         self.preprocessor = TextPreprocessor()
     
-    def process(self, input_data: Dict[str, Any]) -> AgentMessage:
+    def process(
+        self,
+        input_data: Dict[str, Any],
+        context: Optional[Dict[str, Any]] = None
+    ) -> AgentMessage:
         """
         Parse resume and extract structured information.
         
@@ -92,7 +96,7 @@ class ResumeParserAgent(BaseAgent):
         patterns = [
             r'(\d+)\+?\s*years?\s+(?:of\s+)?experience',
             r'(\d+)\+?\s*years?\s+in',
-            r'(\d+)\+?\s*years?)\s+of'
+            r'(\d+)\+?\s*years?\s+of'
         ]
         
         years_found = []
@@ -143,7 +147,7 @@ class ResumeParserAgent(BaseAgent):
         
         # Common title patterns
         title_keywords = [
-            'engineer', 'developer', 'analyst', 'manager', 'director',
+                    'engineer', 'developer', 'analyst', 'manager', 'director',
             'specialist', 'consultant', 'architect', 'scientist', 'lead',
             'senior', 'junior', 'principal', 'staff'
         ]
