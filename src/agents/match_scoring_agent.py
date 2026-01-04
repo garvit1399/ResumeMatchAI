@@ -3,7 +3,7 @@ Match Scoring Agent
 Computes fit score by aggregating signals from other agents.
 """
 
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from .base_agent import BaseAgent, AgentMessage
 from ..embeddings import EmbeddingGenerator
 from sklearn.metrics.pairwise import cosine_similarity
@@ -18,7 +18,11 @@ class MatchScoringAgent(BaseAgent):
         super().__init__("MatchScoring")
         self.embedding_generator = EmbeddingGenerator()
     
-    def process(self, input_data: Dict[str, Any]) -> AgentMessage:
+    def process(
+        self,
+        input_data: Dict[str, Any],
+        context: Optional[Dict[str, Any]] = None
+    ) -> AgentMessage:
         """
         Compute match score from resume and job data.
         
@@ -28,8 +32,9 @@ class MatchScoringAgent(BaseAgent):
         Returns:
             AgentMessage with match scores
         """
-        resume_data = input_data.get('resume_data', {})
-        job_data = input_data.get('job_data', {})
+        # Get data from input_data or context
+        resume_data = input_data.get('resume_data') or (context.get('resume_data', {}) if context else {})
+        job_data = input_data.get('job_data') or (context.get('job_data', {}) if context else {})
         resume_text = input_data.get('resume_text', '')
         job_text = input_data.get('job_text', '')
         

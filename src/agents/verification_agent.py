@@ -4,7 +4,7 @@ Validates claims, stress-tests score stability, and flags uncertain outputs.
 """
 
 import re
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from .base_agent import BaseAgent, AgentMessage
 from ..embeddings import EmbeddingGenerator
 from sklearn.metrics.pairwise import cosine_similarity
@@ -19,7 +19,11 @@ class VerificationAgent(BaseAgent):
         super().__init__("Verification")
         self.embedding_generator = EmbeddingGenerator()
     
-    def process(self, input_data: Dict[str, Any]) -> AgentMessage:
+    def process(
+        self,
+        input_data: Dict[str, Any],
+        context: Optional[Dict[str, Any]] = None
+    ) -> AgentMessage:
         """
         Verify outputs from other agents and test stability.
         
@@ -31,12 +35,58 @@ class VerificationAgent(BaseAgent):
         """
         resume_text = input_data.get('resume_text', '')
         job_text = input_data.get('job_text', '')
-        match_score = input_data.get('match_score', 0)
-        resume_data = input_data.get('resume_data', {})
-        job_data = input_data.get('job_data', {})
         
-        # Stability testing
-        stability_results = self._test_stability(resume_text, job_text, match_score)
+        # Get data from input_data or context
+        if context:
+            # Extract from context messages if available
+            resume_data_msg = context.get('resume_data')
+            job_data_msg = context.get('job_data')
+            match_score_msg = context.get('match_score')
+            
+            # Handle AgentMessage objects or dicts
+            if hasattr(resume_data_msg, 'output'):
+                resume_data = resume_data_msg.output
+            elif isinstance(resume_data_msg, dict):
+                resume_data = resume_data_msg
+            else:
+                resume_data = {}
+            
+            if hasattr(job_data_msg, 'output'):
+                job_data = job_data_msg.output
+            elif isinstance(job_data_msg, dict):
+                job_data = job_data_msg
+            else:
+                job_data = {}
+            
+            # Extract match score from message or input
+            if match_score_msg:
+                if hasattr(match_score_msg, 'output'):
+                    score_val = match_score_msg.output.get('overall_score', 0)
+                elif isinstance(match_score_msg, dict):
+                    score_val = match_score_msg.get('overall_score', 0)
+                else:
+                    score_val = 0
+                
+                # Convert to 0-100 scale if needed
+                if isinstance(score_val, (int, float)):
+                    match_score = score_val if score_val <= 1.0 else score_val / 100.0
+                else:
+                    match_score = 0.0
+            else:
+                match_score = input_data.get('match_score', 0)
+                if isinstance(match_score, (int, float)) and match_score > 1:
+                    match_score = match_score / 100.0
+        else:
+            match_score = input_data.get('match_score', 0)
+            if isinstance(match_score, (int, float)) and match_score > 1:
+                match_score = match_score / 100.0
+            resume_data = input_data.get('resume_data', {})
+            job_data = input_data.get('job_data', {})
+        
+        # Stability testing (match_score should be 0-1 scale for internal use)
+        # But we need 0-100 for display, so convert
+        match_score_for_stability = match_score if match_score <= 1.0 else match_score / 100.0
+        stability_results = self._test_stability(resume_text, job_text, match_score_for_stability * 100.0)
         
         # Self-consistency checks
         consistency_results = self._check_consistency(

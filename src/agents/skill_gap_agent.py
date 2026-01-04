@@ -3,7 +3,7 @@ Skill Gap & Recommendation Agent
 Identifies missing skills, suggests learning paths, and ranks importance.
 """
 
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 from .base_agent import BaseAgent, AgentMessage
 
 
@@ -14,7 +14,11 @@ class SkillGapAgent(BaseAgent):
         """Initialize skill gap agent."""
         super().__init__("SkillGap")
     
-    def process(self, input_data: Dict[str, Any]) -> AgentMessage:
+    def process(
+        self,
+        input_data: Dict[str, Any],
+        context: Optional[Dict[str, Any]] = None
+    ) -> AgentMessage:
         """
         Identify skill gaps and generate recommendations.
         
@@ -24,8 +28,9 @@ class SkillGapAgent(BaseAgent):
         Returns:
             AgentMessage with skill gap analysis
         """
-        resume_data = input_data.get('resume_data', {})
-        job_data = input_data.get('job_data', {})
+        # Get data from input_data or context
+        resume_data = input_data.get('resume_data') or (context.get('resume_data', {}) if context else {})
+        job_data = input_data.get('job_data') or (context.get('job_data', {}) if context else {})
         
         if not resume_data or not job_data:
             return self.create_message(
