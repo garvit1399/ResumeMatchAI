@@ -48,6 +48,7 @@ Recommendations:
 - ✅ **Interactive web interface** built with Streamlit
 
 ### Advanced Features (NEW! 🎉)
+- 🤖 **Multi-Agent System (MARIS)** - Collaborative AI where specialized agents reason, communicate, and verify outputs
 - 🔍 **Explainable AI (XAI)** - Transparent scoring with detailed breakdowns showing why the score is what it is
 - 💪 **Skill Confidence Scoring** - Analyzes skill strength (Strong/Moderate/Weak) based on context, verbs, and frequency
 - 📈 **Multi-Job Comparison** - Compare one resume against multiple job descriptions simultaneously with ranked recommendations
@@ -55,6 +56,8 @@ Recommendations:
 - 📝 **ATS Optimization Mode** - Detects ATS-unfriendly formatting and provides actionable recommendations
 - 📊 **Section Impact Analysis** - Shows how each section (skills, experience, education, tools) contributes to the final score
 - 💡 **Resume Highlights** - Identifies which resume sections helped or hurt the match score
+- 🧪 **Verification & Stability Testing** - Stress-tests score stability and flags uncertain outputs
+- 🤖 **MARIS (Multi-Agent System)** ⭐ **NEWEST!** - Collaborative AI system with 5 specialized agents that reason, communicate, and verify each other's outputs with stability testing and bias detection
 
 ## 🧠 Technologies Used
 
@@ -199,14 +202,24 @@ The app features a **tabbed interface** with 6 comprehensive views:
    - Or paste the resume text directly
 2. **Upload or paste the job description** (TXT format or paste text)
 3. Click **"Match Resume"** to analyze
-4. **Explore results** using the 6 tabs:
-   - **📊 Main Results** - Core matching results and skill gaps
-   - **🔍 Explainable AI** - Why the score is what it is (section breakdowns, top reasons)
-   - **💪 Skill Confidence** - Strength analysis of your skills (Strong/Moderate/Weak)
-   - **📝 ATS Optimization** - ATS compatibility score and recommendations
-   - **✍️ Resume Rewrites** - AI-powered improvement suggestions
-   - **📈 Multi-Job Compare** - Compare against multiple jobs at once
-5. Use the sidebar to adjust scoring weights if needed
+4. **Choose AI System Mode** (in sidebar):
+   - **Standard Mode**: Single-model matching system (default)
+   - **MARIS Mode**: Multi-agent collaborative AI system with verification
+5. Click **"Match Resume"** to analyze
+6. **Explore results**:
+   - **Standard Mode**: 6 tabs with detailed analysis
+   - **MARIS Mode**: Multi-agent dashboard showing agent reasoning, verification, and stability metrics
+7. Use the sidebar to adjust scoring weights if needed
+
+### MARIS Mode Features 🤖
+
+When MARIS mode is enabled, you get:
+- **5 Specialized Agents** working collaboratively
+- **Agent Reasoning** - See how each agent thinks
+- **Stability Testing** - Score consistency across perturbations
+- **Verification** - Cross-agent validation and consistency checks
+- **Agent Agreement Metrics** - Measure consensus between agents
+- **Confidence Scoring** - Overall system confidence in results
 
 ## 📁 Project Structure
 
@@ -227,7 +240,15 @@ ResumeMatchAI/
 │   ├── skill_confidence.py    # Skill confidence scoring
 │   ├── ats_optimizer.py        # ATS optimization analysis
 │   ├── resume_rewriter.py     # Resume rewrite suggestions
-│   └── multi_job_comparison.py # Multi-job comparison engine
+│   ├── multi_job_comparison.py # Multi-job comparison engine
+│   ├── maris_controller.py    # MARIS orchestration system
+│   └── agents/                # Multi-agent system modules
+│       ├── base_agent.py      # Base agent class
+│       ├── resume_parser_agent.py
+│       ├── job_analyzer_agent.py
+│       ├── match_scoring_agent.py
+│       ├── skill_gap_agent.py
+│       └── verification_agent.py
 │
 ├── app.py                # Streamlit frontend application
 ├── requirements.txt      # Python dependencies
@@ -295,6 +316,31 @@ ResumeMatchAI/
 - Provides best-fit job recommendations
 - Generates comparison statistics and summaries
 
+### `agents/` 🤖 MULTI-AGENT SYSTEM (MARIS) ⭐ NEW
+- **`base_agent.py`**: Base agent class with communication protocol (JSON messages)
+- **`resume_parser_agent.py`**: Extracts structured info from resumes
+- **`job_analyzer_agent.py`**: Analyzes job requirements (required vs preferred skills)
+- **`match_scoring_agent.py`**: Computes fit scores by aggregating signals
+- **`skill_gap_agent.py`**: Identifies missing skills and suggests learning paths
+- **`verification_agent.py`**: Validates outputs, tests stability, flags uncertain results
+- **`orchestrator.py`**: Coordinates agent workflow and communication
+
+**Key Innovation**: The Verification Agent performs perturbation testing and self-consistency checks to ensure reliable, trustworthy outputs.
+
+### `maris_controller.py` ⭐ NEWEST - Multi-Agent System
+- Orchestrates 5 specialized AI agents
+- Manages agent communication and data flow
+- Coordinates verification and validation
+- Provides comprehensive multi-agent analysis
+
+### Agent Modules (`src/agents/`) ⭐ NEWEST
+- **`base_agent.py`**: Base class defining agent interface and communication protocol
+- **`resume_parser_agent.py`**: Extracts structured information from resumes
+- **`job_analyzer_agent.py`**: Analyzes job requirements and categorizes skills
+- **`match_scoring_agent.py`**: Computes match scores using embeddings
+- **`skill_gap_agent.py`**: Identifies gaps and suggests learning paths
+- **`verification_agent.py`**: Validates outputs, tests stability, detects bias
+
 ## 📈 Future Enhancements
 
 - [x] ✅ ATS-friendly resume suggestions (Implemented!)
@@ -361,9 +407,14 @@ AI / ML | NLP | Data Analytics
 > Built an AI-powered resume–job matching system using NLP and semantic embeddings to evaluate candidate-job fit and identify skill gaps with explainable scoring.
 
 ### Detailed Version (for technical interviews):
-> Developed an advanced AI-powered resume–job matching system featuring explainable AI (XAI) for transparent scoring, skill confidence analysis, multi-job comparison capabilities, ATS optimization, and AI-powered resume rewrite suggestions. The system uses sentence transformers for semantic matching, NLP for skill extraction, and provides actionable insights to improve resume alignment with job requirements.
+> Developed an advanced AI-powered resume–job matching system featuring explainable AI (XAI) for transparent scoring, skill confidence analysis, multi-job comparison capabilities, ATS optimization, and AI-powered resume rewrite suggestions. Built MARIS (Multi-Agent Resume Intelligence System) - a collaborative AI system with 5 specialized agents that reason, communicate, and verify each other's outputs using stability testing and bias detection. The system uses sentence transformers for semantic matching, NLP for skill extraction, and provides actionable insights to improve resume alignment with job requirements.
+
+### MARIS-Specific Resume Line:
+> Architected and implemented MARIS (Multi-Agent Resume Intelligence System) - a collaborative AI framework where 5 specialized agents (Parser, Analyzer, Scorer, Gap Analyzer, Verifier) communicate via structured protocols, perform stability testing through input perturbations, and provide verified outputs with confidence scoring. Demonstrates understanding of multi-agent systems, task decomposition, orchestration, and trustworthy AI principles.
 
 ### Feature Highlights for Resume:
+- **Multi-Agent System (MARIS)**: Built collaborative AI system with 5 specialized agents (Parser, Analyzer, Scorer, Gap Analysis, Verification) that communicate via structured JSON protocols and verify each other's outputs
+- **Verification Agent**: Implemented perturbation testing and self-consistency checks to ensure score stability and flag uncertain outputs
 - **Explainable AI**: Implemented transparent, interpretable match scores with detailed section breakdowns
 - **Skill Confidence Scoring**: Analyzed skill strength based on context, verb usage, and frequency
 - **Multi-Job Comparison**: Built dashboard to compare resume fit across multiple positions simultaneously
@@ -379,5 +430,6 @@ AI / ML | NLP | Data Analytics
 ## 📚 Additional Documentation
 
 - See [FEATURES.md](FEATURES.md) for detailed documentation of all advanced features
+- See [MARIS.md](MARIS.md) for comprehensive multi-agent system documentation
 - See [QUICKSTART.md](QUICKSTART.md) for quick setup instructions
 

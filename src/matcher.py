@@ -14,6 +14,7 @@ from .explainable import ExplainableAnalyzer
 from .skill_confidence import SkillConfidenceAnalyzer
 from .ats_optimizer import ATSOptimizer
 from .resume_rewriter import ResumeRewriter
+from .agents.orchestrator import AgentOrchestrator
 
 
 class ResumeJobMatcher:
@@ -22,7 +23,8 @@ class ResumeJobMatcher:
     def __init__(
         self,
         embedding_model: str = "all-MiniLM-L6-v2",
-        custom_skills: set = None
+        custom_skills: set = None,
+        use_multi_agent: bool = True
     ):
         """
         Initialize matcher.
@@ -30,7 +32,9 @@ class ResumeJobMatcher:
         Args:
             embedding_model: Sentence transformer model name
             custom_skills: Additional custom skills to search for
+            use_multi_agent: Whether to use multi-agent system (MARIS)
         """
+        self.use_multi_agent = use_multi_agent
         self.embedding_generator = EmbeddingGenerator(embedding_model)
         self.preprocessor = TextPreprocessor()
         self.skill_extractor = SkillExtractor(custom_skills)
@@ -39,6 +43,10 @@ class ResumeJobMatcher:
         self.skill_confidence_analyzer = SkillConfidenceAnalyzer(self.skill_extractor)
         self.ats_optimizer = ATSOptimizer(self.skill_extractor)
         self.resume_rewriter = ResumeRewriter(self.skill_extractor, self.preprocessor)
+        
+        # Initialize multi-agent orchestrator if enabled
+        if self.use_multi_agent:
+            self.orchestrator = AgentOrchestrator()
     
     def compute_similarity(self, text1: str, text2: str) -> float:
         """
@@ -139,6 +147,107 @@ class ResumeJobMatcher:
         Returns:
             Dictionary with comprehensive matching results
         """
+        # Use multi-agent system if enabled
+        if self.use_multi_agent:
+            return self._compute_with_multi_agent(resume_text, job_text, weights)
+        
+        # Fallback to original single-agent method
+        return self._compute_with_single_agent(resume_text, job_text, weights)
+    
+    def _compute_with_multi_agent(
+        self,
+        resume_text: str,
+        job_text: str,
+        weights: Dict[str, float] = None
+    ) -> Dict[str, any]:
+        """Compute score using multi-agent system."""
+        # Run multi-agent pipeline
+        agent_results = self.orchestrator.run_pipeline(resume_text, job_text)
+        
+        # Extract data from agent results
+        match_score = agent_results['match_score']
+        section_scores = agent_results['section_scores']
+        gap_analysis = agent_results['gap_analysis']
+        verification = agent_results['verification']
+        
+        # Convert section scores to 0-1 scale for compatibility
+        section_scores_normalized = {
+            k: v / 100.0 for k, v in section_scores.items()
+        }
+        
+        # Get explainable analysis (using existing analyzer for compatibility)
+        if weights is None:
+            weights = {
+                'skills': 0.4,
+                'experience': 0.3,
+                'education': 0.15,
+                'tools': 0.15
+            }
+        
+        explanations = self.explainable_analyzer.analyze_score_breakdown(
+            resume_text, job_text, section_scores_normalized, weights
+        )
+        top_reasons = self.explainable_analyzer.get_top_reasons_low_score(match_score, explanations)
+        resume_highlights = self.explainable_analyzer.highlight_resume_sections(resume_text, job_text)
+        
+        # Skill confidence analysis
+        skill_confidence = self.skill_confidence_analyzer.analyze_skill_confidence(resume_text)
+        skill_strength_summary = self.skill_confidence_analyzer.get_skill_strength_summary(skill_confidence)
+        
+        # ATS optimization analysis
+        ats_analysis = self.ats_optimizer.analyze_ats_compatibility(resume_text, job_text)
+        ats_recommendations = self.ats_optimizer.get_ats_recommendations(ats_analysis)
+        
+        # Resume rewrite suggestions
+        rewrite_suggestions = self.resume_rewriter.suggest_rewrites(resume_text, job_text)
+        
+        # Build comprehensive results with multi-agent data
+        return {
+            'match_score': match_score,
+            'overall_similarity': section_scores.get('semantic_similarity', 0),
+            'section_scores': section_scores,
+            'weights': weights,
+            'gap_analysis': {
+                'missing_skills': gap_analysis.get('missing_required_skills', []),
+                'matching_skills': gap_analysis.get('matching_skills', []),
+                'missing_tools': [],
+                'matching_tools': [],
+                'skill_coverage': gap_analysis.get('skill_coverage', 0),
+                'tool_coverage': 0,
+                'resume_skills': agent_results['resume_data'].get('skills', []),
+                'job_skills': agent_results['job_data'].get('required_skills', []),
+                'resume_education': agent_results['resume_data'].get('education_keywords', []),
+                'job_education': agent_results['job_data'].get('education_required', ''),
+                'resume_experience_keywords': agent_results['resume_data'].get('experience_keywords', []),
+                'job_experience_keywords': agent_results['job_data'].get('experience_keywords', [])
+            },
+            'explanations': explanations,
+            'top_reasons_low_score': top_reasons,
+            'resume_highlights': resume_highlights,
+            'skill_confidence': skill_confidence,
+            'skill_strength_summary': skill_strength_summary,
+            'ats_analysis': ats_analysis,
+            'ats_recommendations': ats_recommendations,
+            'rewrite_suggestions': rewrite_suggestions,
+            # Multi-agent specific data
+            'multi_agent': {
+                'enabled': True,
+                'agent_messages': agent_results['agent_messages'],
+                'agent_contributions': agent_results['agent_contributions'],
+                'agent_reasoning': self.orchestrator.get_agent_reasoning(),
+                'agent_evidence': self.orchestrator.get_agent_evidence(),
+                'verification': verification,
+                'pipeline_metadata': agent_results['pipeline_metadata']
+            }
+        }
+    
+    def _compute_with_single_agent(
+        self,
+        resume_text: str,
+        job_text: str,
+        weights: Dict[str, float] = None
+    ) -> Dict[str, any]:
+        """Compute score using original single-agent method."""
         if weights is None:
             weights = {
                 'skills': 0.4,

@@ -12,6 +12,7 @@ import pandas as pd
 from src.parser import extract_text
 from src.matcher import ResumeJobMatcher
 from src.multi_job_comparison import MultiJobComparator
+from src.maris_controller import MARISController
 
 # Page configuration
 st.set_page_config(
@@ -63,6 +64,12 @@ if 'matcher' not in st.session_state:
     st.session_state.matcher = None
 if 'results' not in st.session_state:
     st.session_state.results = None
+if 'maris_controller' not in st.session_state:
+    st.session_state.maris_controller = None
+if 'maris_results' not in st.session_state:
+    st.session_state.maris_results = None
+if 'use_maris' not in st.session_state:
+    st.session_state.use_maris = False
 
 
 @st.cache_resource
@@ -70,6 +77,12 @@ def load_matcher():
     """Load and cache the matcher model."""
     with st.spinner("Loading AI models... This may take a moment on first run."):
         return ResumeJobMatcher()
+
+@st.cache_resource
+def load_maris():
+    """Load and cache the MARIS controller."""
+    with st.spinner("Initializing MARIS agents... This may take a moment."):
+        return MARISController()
 
 
 def main():
@@ -91,6 +104,22 @@ def main():
         
         st.markdown("---")
         st.header("⚙️ Advanced Options")
+        
+        # MARIS Mode Toggle
+        st.subheader("🤖 AI System Mode")
+        use_maris = st.checkbox(
+            "Use MARIS (Multi-Agent System)",
+            value=st.session_state.use_maris,
+            help="MARIS uses multiple specialized AI agents that collaborate and verify each other's outputs"
+        )
+        st.session_state.use_maris = use_maris
+        
+        if use_maris:
+            st.info("🧠 **MARIS Mode**: Multi-agent collaborative AI system with verification")
+        else:
+            st.info("🔍 **Standard Mode**: Single-model matching system")
+        
+        st.markdown("---")
         
         # Custom weights
         st.subheader("Scoring Weights")
@@ -206,35 +235,57 @@ def main():
         if not resume_text or not job_text:
             st.warning("⚠️ Please provide both resume and job description.")
         else:
-            # Load matcher
-            if st.session_state.matcher is None:
-                st.session_state.matcher = load_matcher()
-            
-            # Perform matching
-            with st.spinner("🤖 Analyzing match... This may take a few seconds."):
-                try:
-                    results = st.session_state.matcher.match(
-                        resume_text,
-                        job_text,
-                        weights=custom_weights
-                    )
-                    st.session_state.results = results
-                except Exception as e:
-                    st.error(f"Error during matching: {str(e)}")
-                    st.exception(e)
+            if st.session_state.use_maris:
+                # Use MARIS system
+                if st.session_state.maris_controller is None:
+                    st.session_state.maris_controller = load_maris()
+                
+                with st.spinner("🤖 MARIS agents analyzing... This may take a few seconds."):
+                    try:
+                        maris_results = st.session_state.maris_controller.run_pipeline(
+                            resume_text,
+                            job_text
+                        )
+                        st.session_state.maris_results = maris_results
+                        st.session_state.results = None  # Clear standard results
+                    except Exception as e:
+                        st.error(f"Error during MARIS analysis: {str(e)}")
+                        st.exception(e)
+            else:
+                # Use standard matcher
+                if st.session_state.matcher is None:
+                    st.session_state.matcher = load_matcher()
+                
+                with st.spinner("🤖 Analyzing match... This may take a few seconds."):
+                    try:
+                        results = st.session_state.matcher.match(
+                            resume_text,
+                            job_text,
+                            weights=custom_weights
+                        )
+                        st.session_state.results = results
+                        st.session_state.maris_results = None  # Clear MARIS results
+                    except Exception as e:
+                        st.error(f"Error during matching: {str(e)}")
+                        st.exception(e)
     
     # Display results with tabs
-    if st.session_state.results:
+    if st.session_state.maris_results:
+        # MARIS Results
+        _display_maris_results(st.session_state.maris_results)
+    elif st.session_state.results:
+        # Standard Results
         results = st.session_state.results
         
         # Create tabs for different views
-        tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
+        tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
             "📊 Main Results",
             "🔍 Explainable AI",
             "💪 Skill Confidence",
             "📝 ATS Optimization",
             "✍️ Resume Rewrites",
-            "📈 Multi-Job Compare"
+            "📈 Multi-Job Compare",
+            "🤖 Multi-Agent System"
         ])
         
         with tab1:
@@ -254,6 +305,9 @@ def main():
         
         with tab6:
             _display_multi_job_comparison(resume_text, st.session_state.matcher)
+        
+        with tab7:
+            _display_multi_agent_system(results)
 
 
 def _display_main_results(results):
@@ -655,6 +709,329 @@ def _display_multi_job_comparison(resume_text, matcher):
             st.metric("Average Match Score", f"{avg_score:.1f}%")
             st.metric("Best Match", f"{results[0]['match_score']:.1f}%")
             st.metric("Worst Match", f"{results[-1]['match_score']:.1f}%")
+
+
+def _display_maris_results(maris_results):
+    """Display MARIS multi-agent system results."""
+    st.header("🤖 MARIS - Multi-Agent Resume Intelligence System")
+    st.info("🧠 **Advanced AI System**: Multiple specialized agents collaborate, verify, and explain their analysis")
+    
+    # Main metrics
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        st.metric(
+            "🎯 Final Score",
+            f"{maris_results['final_score']:.1f}%",
+            delta=f"{maris_results['final_score'] - 50:.1f}%"
+        )
+    
+    with col2:
+        confidence_emoji = "🟢" if maris_results['confidence'] == 'High' else "🟡" if maris_results['confidence'] == 'Medium' else "🔴"
+        st.metric("Confidence", f"{confidence_emoji} {maris_results['confidence']}")
+    
+    with col3:
+        st.metric("Stability Index", f"{maris_results['stability_index']:.2f}")
+    
+    with col4:
+        verified_emoji = "✅" if maris_results['verified'] else "⚠️"
+        st.metric("Verified", f"{verified_emoji} {'Yes' if maris_results['verified'] else 'No'}")
+    
+    # Agent Overview
+    st.markdown("---")
+    st.subheader("🤖 Agent Overview")
+    
+    agent_metrics = maris_results['agent_metrics']
+    agent_cols = st.columns(5)
+    
+    agent_names = [
+        ('Resume Parser', 'resume_parser_confidence'),
+        ('Job Analyzer', 'job_analyzer_confidence'),
+        ('Match Scorer', 'match_scorer_confidence'),
+        ('Skill Gap', 'skill_gap_analyzer_confidence'),
+        ('Verification', 'verification_agent_confidence')
+    ]
+    
+    for i, (name, key) in enumerate(agent_names):
+        with agent_cols[i]:
+            confidence = agent_metrics.get(key, 0)
+            st.metric(name, f"{confidence:.2f}")
+    
+    st.metric("Agent Agreement", f"{agent_metrics['agent_agreement']:.1f}%")
+    
+    # Agent Details Tabs
+    st.markdown("---")
+    agent_tabs = st.tabs([
+        "📊 Results Summary",
+        "🧠 Agent Reasoning",
+        "🔍 Agent Details",
+        "⚠️ Warnings & Issues"
+    ])
+    
+    with agent_tabs[0]:
+        st.subheader("📊 Analysis Summary")
+        
+        # Match Score Details
+        match_score = maris_results['match_score']
+        st.write("**Match Score Breakdown:**")
+        col1, col2, col3, col4 = st.columns(4)
+        with col1:
+            st.metric("Skills", f"{match_score.get('section_scores', {}).get('skills', 0):.1f}%")
+        with col2:
+            st.metric("Experience", f"{match_score.get('section_scores', {}).get('experience', 0):.1f}%")
+        with col3:
+            st.metric("Education", f"{match_score.get('section_scores', {}).get('education', 0):.1f}%")
+        with col4:
+            st.metric("Tools", f"{match_score.get('section_scores', {}).get('tools', 0):.1f}%")
+        
+        # Skill Gap Summary
+        gap_analysis = maris_results['gap_analysis']
+        st.write("**Skill Gap Analysis:**")
+        col1, col2 = st.columns(2)
+        with col1:
+            st.metric("Required Coverage", f"{gap_analysis.get('required_coverage', 0):.1f}%")
+            missing_req = gap_analysis.get('missing_required_skills', [])
+            if missing_req:
+                st.write(f"**Missing Required Skills ({len(missing_req)}):**")
+                for skill in missing_req[:5]:
+                    st.write(f"- {skill}")
+        with col2:
+            st.metric("Overall Coverage", f"{gap_analysis.get('overall_coverage', 0):.1f}%")
+            matching = gap_analysis.get('matching_all_skills', [])
+            if matching:
+                st.write(f"**Matching Skills ({len(matching)}):**")
+                for skill in matching[:5]:
+                    st.write(f"- {skill}")
+    
+    with agent_tabs[1]:
+        st.subheader("🧠 Agent Reasoning & Evidence")
+        
+        explainability = maris_results['explainability']
+        reasoning = explainability['agent_reasoning']
+        evidence = explainability['agent_evidence']
+        
+        for agent_name, agent_reasoning in reasoning.items():
+            with st.expander(f"🤖 {agent_name.replace('_', ' ').title()}"):
+                st.write("**Reasoning:**")
+                st.info(agent_reasoning or "No reasoning provided")
+                
+                agent_evidence = evidence.get(agent_name, [])
+                if agent_evidence:
+                    st.write("**Evidence:**")
+                    for ev in agent_evidence:
+                        st.write(f"- {ev}")
+    
+    with agent_tabs[2]:
+        st.subheader("🔍 Detailed Agent Outputs")
+        
+        # Resume Parser Output
+        with st.expander("📄 Resume Parser Agent"):
+            resume_data = maris_results['resume_data']
+            st.write(f"**Skills Found:** {len(resume_data.get('skills', []))}")
+            st.write(f"**Experience Years:** {resume_data.get('experience_years', 0)}")
+            st.write(f"**Education Level:** {resume_data.get('education_level', 'N/A')}")
+            st.write(f"**Job Titles:** {', '.join(resume_data.get('job_titles', [])[:3])}")
+        
+        # Job Analyzer Output
+        with st.expander("💼 Job Analyzer Agent"):
+            job_data = maris_results['job_data']
+            st.write(f"**Required Skills:** {len(job_data.get('required_skills', []))}")
+            st.write(f"**Preferred Skills:** {len(job_data.get('preferred_skills', []))}")
+            st.write(f"**Role Level:** {job_data.get('role_level', 'N/A')}")
+            st.write(f"**Experience Requirement:** {job_data.get('experience_requirement', 0)} years")
+        
+        # Verification Output
+        with st.expander("✅ Verification Agent"):
+            verification = maris_results['verification']
+            st.write(f"**Stability Index:** {verification.get('stability_index', 0):.3f}")
+            st.write(f"**Consistency Score:** {verification.get('consistency_score', 0):.3f}")
+            st.write(f"**Agent Agreement:** {verification.get('agent_agreement', 0):.1f}%")
+    
+    with agent_tabs[3]:
+        st.subheader("⚠️ Warnings & Issues")
+        
+        warnings = maris_results.get('warnings', [])
+        if warnings:
+            for warning in warnings:
+                st.warning(f"⚠️ {warning}")
+        else:
+            st.success("✅ No warnings - all agents report clean outputs")
+        
+        # Agent-specific warnings
+        agent_messages = maris_results['agent_messages']
+        st.write("**Agent-Specific Warnings:**")
+        for agent_name, message in agent_messages.items():
+            agent_warnings = message.get('warnings', [])
+            if agent_warnings:
+                with st.expander(f"🤖 {agent_name.replace('_', ' ').title()}"):
+                    for warn in agent_warnings:
+                        st.warning(f"⚠️ {warn}")
+    
+    # Stability & Verification Details
+    st.markdown("---")
+    with st.expander("🔬 Stability & Verification Details"):
+        verification = maris_results['verification']
+        st.write(f"**Stability Index:** {verification.get('stability_index', 0):.3f}")
+        st.caption("Measures score consistency across input perturbations (higher = more stable)")
+        
+        st.write(f"**Consistency Score:** {verification.get('consistency_score', 0):.3f}")
+        st.caption("Measures agreement between different agents (higher = more consistent)")
+        
+        st.write(f"**Agent Agreement:** {verification.get('agent_agreement', 0):.1f}%")
+        st.caption("Average confidence across all agents")
+        
+        if maris_results['verified']:
+            st.success("✅ **Verified**: All checks passed - output is stable and consistent")
+        else:
+            st.warning("⚠️ **Not Verified**: Some checks failed - review warnings above")
+
+
+def _display_multi_agent_system(results):
+    """Display multi-agent system (MARIS) outputs and explainability."""
+    st.header("🤖 Multi-Agent Resume Intelligence System (MARIS)")
+    st.info("🧠 **Advanced AI Architecture**: Multiple specialized agents collaborate, verify, and explain their analysis")
+    
+    # Check if multi-agent data exists
+    if 'multi_agent' not in results or not results['multi_agent'].get('enabled', False):
+        st.warning("⚠️ Multi-agent system not enabled. Enable it in the sidebar to see agent outputs.")
+        return
+    
+    multi_agent = results['multi_agent']
+    verification = multi_agent.get('verification', {})
+    agent_messages = multi_agent.get('agent_messages', [])
+    agent_reasoning = multi_agent.get('agent_reasoning', {})
+    agent_evidence = multi_agent.get('agent_evidence', {})
+    pipeline_metadata = multi_agent.get('pipeline_metadata', {})
+    
+    # Main metrics
+    col1, col2, col3, col4 = st.columns(4)
+    
+    with col1:
+        final_score = verification.get('final_score', results.get('match_score', 0))
+        st.metric(
+            "🎯 Final Score",
+            f"{final_score:.1f}%",
+            delta=f"{final_score - 50:.1f}%"
+        )
+    
+    with col2:
+        confidence_level = verification.get('confidence_level', 'Medium')
+        confidence_emoji = "🟢" if confidence_level == 'High' else "🟡" if confidence_level == 'Medium' else "🔴"
+        st.metric("Confidence", f"{confidence_emoji} {confidence_level}")
+    
+    with col3:
+        stability = verification.get('stability_index', 0.0)
+        st.metric("Stability Index", f"{stability:.3f}")
+    
+    with col4:
+        is_stable = verification.get('is_stable', True)
+        verified_emoji = "✅" if is_stable else "⚠️"
+        st.metric("Stable", f"{verified_emoji} {'Yes' if is_stable else 'No'}")
+    
+    # Agent Overview
+    st.markdown("---")
+    st.subheader("🤖 Agent Overview")
+    
+    agent_names = [
+        'ResumeParser',
+        'JobAnalyzer',
+        'MatchScoring',
+        'SkillGap',
+        'Verification'
+    ]
+    
+    agent_cols = st.columns(5)
+    
+    for i, agent_name in enumerate(agent_names):
+        with agent_cols[i]:
+            # Find agent message
+            agent_msg = next((msg for msg in agent_messages if msg.get('agent') == agent_name), None)
+            if agent_msg:
+                confidence = agent_msg.get('confidence', 0.0)
+                st.metric(agent_name.replace('Parser', ' Parser').replace('Analyzer', ' Analyzer').replace('Scoring', ' Scorer'), f"{confidence:.2f}")
+            else:
+                st.metric(agent_name, "N/A")
+    
+    # Agent Reasoning
+    st.markdown("---")
+    st.subheader("💭 Agent Reasoning")
+    
+    for agent_name in agent_names:
+        if agent_name in agent_reasoning:
+            with st.expander(f"🧠 {agent_name} - {agent_reasoning[agent_name][:50]}..."):
+                st.write(f"**Reasoning:** {agent_reasoning[agent_name]}")
+                
+                # Show evidence if available
+                if agent_name in agent_evidence:
+                    st.write("**Evidence:**")
+                    for evidence_item in agent_evidence[agent_name]:
+                        st.write(f"  • {evidence_item}")
+    
+    # Verification Details
+    st.markdown("---")
+    st.subheader("🧪 Verification & Stability")
+    
+    col1, col2 = st.columns(2)
+    
+    with col1:
+        st.write("**Stability Analysis**")
+        st.metric("Stability Index", f"{stability:.3f}", 
+                 help="Score consistency across perturbations (0-1, higher is better)")
+        st.metric("Score Variance", f"{verification.get('score_variance', 0):.3f}",
+                 help="Variance in scores across perturbations")
+        
+        if verification.get('is_stable', True):
+            st.success("✅ Score is stable")
+        else:
+            st.warning("⚠️ Score may be unstable")
+    
+    with col2:
+        st.write("**Consistency Checks**")
+        consistency = verification.get('consistency_score', 0.0)
+        st.metric("Consistency Score", f"{consistency:.3f}",
+                 help="Self-consistency of results (0-1, higher is better)")
+        
+        if verification.get('is_consistent', True):
+            st.success("✅ Results are consistent")
+        else:
+            st.warning("⚠️ Results may be inconsistent")
+    
+    # Warnings
+    warnings = verification.get('warnings', [])
+    if warnings:
+        st.markdown("---")
+        st.subheader("⚠️ Warnings")
+        for warning in warnings:
+            st.warning(warning)
+    else:
+        st.success("✅ No warnings - all checks passed")
+    
+    # Agent Contributions
+    st.markdown("---")
+    st.subheader("📊 Agent Contributions to Final Score")
+    
+    contributions = multi_agent.get('agent_contributions', {})
+    if contributions:
+        for section, contribution in contributions.items():
+            st.write(f"**{section.capitalize()}**: {contribution:.2f}% contribution")
+    
+    # Pipeline Metadata
+    st.markdown("---")
+    st.subheader("⚙️ Pipeline Metadata")
+    
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Execution Time", f"{pipeline_metadata.get('elapsed_time', 0):.2f}s")
+    with col2:
+        st.metric("Agents Used", pipeline_metadata.get('agent_count', 0))
+    with col3:
+        avg_confidence = pipeline_metadata.get('average_confidence', 0.0)
+        st.metric("Avg Confidence", f"{avg_confidence:.3f}")
+    
+    # Raw Agent Messages (Collapsible)
+    with st.expander("🔍 View Raw Agent Messages (JSON)"):
+        import json
+        st.json(agent_messages)
 
 
 if __name__ == "__main__":
