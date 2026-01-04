@@ -63,43 +63,50 @@ class MARISController:
         job_data = job_data_msg.output
         
         # Step 3: Compute match score (with context from previous agents)
-        context_for_scorer = {
+        match_score_msg = self.match_scorer.process({
             'resume_data': resume_data,
-            'job_data': job_data
-        }
-        match_score_msg = self.match_scorer.process(
-            {'resume_text': resume_text, 'job_text': job_text},
-            context=context_for_scorer
-        )
+            'job_data': job_data,
+            'resume_text': resume_text,
+            'job_text': job_text
+        })
         match_score = match_score_msg.output
         
         # Step 4: Analyze skill gaps (with context)
-        context_for_gap = {
+        gap_analysis_msg = self.skill_gap_analyzer.process({
             'resume_data': resume_data,
             'job_data': job_data
-        }
-        gap_analysis_msg = self.skill_gap_analyzer.process({}, context=context_for_gap)
+        })
         gap_analysis = gap_analysis_msg.output
         
         # Step 5: Verification (with all context)
-        context_for_verification = {
-            'resume_data': resume_data_msg,
-            'job_data': job_data_msg,
-            'match_score': match_score_msg,
-            'gap_analysis': gap_analysis_msg
-        }
-        verification_msg = self.verification_agent.process(
-            {'resume_text': resume_text, 'job_text': job_text},
-            context=context_for_verification
-        )
+        # Extract match score (could be overall_score or match_score)
+        overall_score = match_score.get('overall_score', 0)
+        if isinstance(overall_score, (int, float)) and overall_score > 1:
+            # If score is 0-100, convert to 0-1 for verification
+            match_score_value = overall_score / 100.0
+        else:
+            match_score_value = overall_score if isinstance(overall_score, (int, float)) else 0.0
+        
+        verification_msg = self.verification_agent.process({
+            'resume_text': resume_text,
+            'job_text': job_text,
+            'match_score': match_score_value * 100.0,  # Verification expects 0-100 scale
+            'resume_data': resume_data,
+            'job_data': job_data
+        })
         verification = verification_msg.output
         
         # Compile comprehensive results
+        # Get final score from verification or match_score
+        final_score = verification.get('final_score', match_score.get('overall_score', 0))
+        if not final_score or final_score == 0:
+            final_score = match_score.get('overall_score', 0)
+        
         results = {
-            'final_score': verification.get('final_score', match_score.get('match_score', 0)),
-            'confidence': verification.get('confidence', 'Medium'),
+            'final_score': final_score,
+            'confidence': verification.get('confidence_level', 'Medium'),
             'stability_index': verification.get('stability_index', 0.0),
-            'verified': verification.get('verified', False),
+            'verified': verification.get('is_stable', False) and verification.get('is_consistent', False),
             
             # Agent outputs
             'resume_data': resume_data,
@@ -154,12 +161,10 @@ class MARISController:
     def get_agent_summary(self) -> Dict[str, str]:
         """Get summary of all agents and their roles."""
         return {
-            agent_name: agent.agent_role
-            for agent_name, agent in self.agents.items()
+            'resume_parser': 'Extracts structured information from resumes',
+            'job_analyzer': 'Analyzes job requirements and categorizes skills',
+            'match_scorer': 'Computes fit scores using multiple signals',
+            'skill_gap_analyzer': 'Identifies missing skills and suggests learning paths',
+            'verification_agent': 'Validates outputs and tests stability'
         }
-    
-    def clear_all_history(self):
-        """Clear message history from all agents."""
-        for agent in self.agents.values():
-            agent.clear_history()
 

@@ -92,7 +92,7 @@ class ResumeParserAgent(BaseAgent):
         patterns = [
             r'(\d+)\+?\s*years?\s+(?:of\s+)?experience',
             r'(\d+)\+?\s*years?\s+in',
-            r'(\d+)\+?\s*years?)\s+of'
+            r'(\d+)\+?\s*years?\s+of'
         ]
         
         years_found = []
